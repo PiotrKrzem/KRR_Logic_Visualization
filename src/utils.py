@@ -4,14 +4,12 @@ from typing import List
 
 from src.logic.statements import *
 
-style = ''
-with open('style.css')as f:
-    print('Opened')
-    style = f.read()
 
 @st.cache_data
 def apply_style():
-    st.markdown(f"<style>{style}</style>", unsafe_allow_html = True)
+    with open('style.css')as f:
+        style = f.read()
+        st.markdown(f"<style>{style}</style>", unsafe_allow_html = True)
 
 def positive_and_negative_fluents() -> List[str]:
     fluents = []
@@ -60,5 +58,5 @@ def mock_example():
 
 def increase_self_reference(inc = 0):
     return {
-        'size': 30 + inc * 15
+        'size': 30 + inc * 25
     }

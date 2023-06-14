@@ -34,10 +34,10 @@ def construct_graph():
                     physics=False
     )
 
-    # statements: List[Statement] = st.session_state.statements
-    # fluents: List[str] = st.session_state.fluents
+    statements: List[Statement] = st.session_state.statements
+    fluents: List[str] = st.session_state.fluents
 
-    statements, fluents = mock_example()
+    # statements, fluents = mock_example()
 
     initially_statements: List[InitiallyStatement] = list(filter(lambda statement:statement.type == INITIALLY, statements))
     causes_statements: List[CausesStatement] = list(filter(lambda statement:statement.type == CAUSES, statements))
@@ -50,49 +50,50 @@ def construct_graph():
 
     for state in states:
         current_state = State(state.fluents.copy(), state.cost)
+        pretty_paint = state == program_state
+        if pretty_paint:
+            start_node_id = get_state_node_id(current_state, state_node_list)
+            color_node(start_node_id, nodes, START_COLOR)
 
-        loop = 0
         performed_actions = []
         state_causes_statements = causes_statements.copy()
         state_after_statements = after_statements.copy()
-        program_update_was_performed = True
-        while program_update_was_performed and loop < MAX_LOOPS:
-            program_update_was_performed = False
 
-            for causes_statement in state_causes_statements:
-                src_id = get_state_node_id(current_state, state_node_list)
-                if causes_statement_satisfied(causes_statement, current_state):
-                    program_update_was_performed = True
-                    current_state = update_state(current_state, causes_statement.fluents, 0)
-                
-                dst_id = get_state_node_id(current_state, state_node_list)
-                performed_actions.append(causes_statement.action)
+        causes_statement_was_satisfied = False
+        for causes_statement in state_causes_statements:
+            src_id = get_state_node_id(current_state, state_node_list)
+            if causes_statement_satisfied(causes_statement, current_state):
+                causes_statement_was_satisfied = True
+                current_state = update_state(current_state, causes_statement.fluents, 0)
+            
+            dst_id = get_state_node_id(current_state, state_node_list)
+            performed_actions.append(causes_statement.action)
 
-                after_draw = False
-                for after_statement in state_after_statements:
-                    if after_statement_satisfied(after_statement, performed_actions):
-                        program_update_was_performed = True
-                        current_state = update_state(current_state, [after_statement.fluent], 0)
-                        dst_id = get_state_node_id(current_state, state_node_list)
-                        _, mini_label = new_after_edge_labels(after_statement)
-                        if not edge_present(after_edges, src_id, dst_id, mini_label):
-                            self_references = count_self_references(causes_edges, after_edges, src_id, dst_id)
-                            after_edges.append(new_after_edge(src_id, dst_id, after_statement, self_references))
-                            loop = 0
-                            after_draw = True
-                        else:
-                            loop += 1
-                        state_after_statements.remove(after_statement)
-                        break
-                
-                _, mini_label = new_causes_edge_labels(causes_statement)
+            after_statement_was_satisfied = False
+            for after_statement in state_after_statements:
+                if after_statement_satisfied(after_statement, performed_actions):
+                    after_statement_was_satisfied = True
+                    current_state = update_state(current_state, [after_statement.fluent], 0)
+                    dst_id = get_state_node_id(current_state, state_node_list)
+                    _, mini_label = new_after_edge_labels(causes_statement, after_statement, causes_statement_was_satisfied)
+                    if not edge_present(after_edges, src_id, dst_id, mini_label):
+                        self_references = count_self_references(causes_edges, after_edges, src_id, dst_id)
+                        after_edges.append(new_after_edge(src_id, dst_id, causes_statement, after_statement, causes_statement_was_satisfied, self_references))
+                    state_after_statements.remove(after_statement)
+                    break
+
+            if not after_statement_was_satisfied:
+                _, mini_label = new_causes_edge_labels(causes_statement, causes_statement_was_satisfied)
                 if not edge_present(causes_edges, src_id, dst_id, mini_label):
                     self_references = count_self_references(causes_edges, after_edges, src_id, dst_id)
-                    causes_edges.append(new_causes_edge(src_id, dst_id, causes_statement, self_references))
-                    loop = 0
-                else:
-                    loop += 1
-                # state_causes_statements.remove(causes_statement)
+                    causes_edges.append(new_causes_edge(src_id, dst_id, causes_statement, causes_statement_was_satisfied, self_references))
+            if pretty_paint and src_id != dst_id:
+                node_id = get_state_node_id(current_state, state_node_list)
+                color_node(node_id, nodes, INBETWEEN_COLOR)
+
+        if pretty_paint:
+            end_node_id = get_state_node_id(current_state, state_node_list)
+            color_node(end_node_id, nodes, END_COLOR)
 
     edges = [*causes_edges, *after_edges]
     agraph(nodes, edges, config)

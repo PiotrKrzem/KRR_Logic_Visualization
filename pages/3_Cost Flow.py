@@ -99,8 +99,8 @@ def construct_graph():
                     collapsible=True
     )
 
-    # statements: List[Statement] = st.session_state.statements
-    statements, _ = mock_example()
+    statements: List[Statement] = st.session_state.statements
+    # statements, _ = mock_example()
 
     initially_statements: List[InitiallyStatement] = list(filter(lambda statement:statement.type == INITIALLY, statements))
     causes_statements: List[CausesStatement] = list(filter(lambda statement:statement.type == CAUSES, statements))
@@ -138,11 +138,17 @@ def construct_graph():
                     src_id, current_state_id, add_new_node = add_node_if_missing(current_state, current_state_id, state_map, nodes)
                     add_edge_causes(edges, src_id, current_state_id, statement)
                     performed_actions.append(statement.action)
-                    causes_statements.remove(statement)
                     causes_update = True
                     if add_new_node:
                         loop = 0
-                    break
+                else:
+                    current_state[0] += statement.cost #??????
+                    add_edge_causes(edges, src_id, current_state_id, statement)
+                    performed_actions.append(statement.action)
+                    causes_update = True
+
+                causes_statements.remove(statement)
+                break
 
         if causes_update or after_update:
             program_update_was_performed = True

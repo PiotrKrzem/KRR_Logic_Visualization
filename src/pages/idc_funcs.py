@@ -126,26 +126,36 @@ def _new_causes_edge(src_id, dst_id, label, mini_label, self_refs = 0):
     e.mini_label = mini_label
     return e
 
-def new_after_edge_labels(statement: AfterStatement):
+def new_causes_edge_labels(statement:CausesStatement, causes_was_triggered):
+    if causes_was_triggered:
+        label = f"{', '.join(statement.fluents)}\nCAUSED BY\n{statement.action}"
+        if len(statement.if_fluents):
+            label += f"\nPROVIDED THAT\n{', '.join(statement.if_fluents)}"
+        if statement.cost != 0:
+            label += f"\nCOST: {statement.cost}"
+        mini_label = f"{statement.action} ({', '.join(statement.fluents)})"
+    else:
+        label = f"<No change>\nCAUSED BY\n{statement.action}"
+        if len(statement.if_fluents):
+            label += f"\nPROVIDED THAT\n{', '.join(statement.if_fluents)}"
+        if statement.cost != 0:
+            label += f"\nCOST: {statement.cost}"
+        mini_label = f"{statement.action} (<No change>)"
+    return label, mini_label
+
+def new_after_edge_labels(causes_statement: CausesStatement, statement: AfterStatement, causes_was_triggered):
     label = f"{statement.fluent}\nAFTER\n{', '.join(statement.actions)}"
     mini_label = f"{statement.fluent}"
+    label_c, mini_label_c = new_causes_edge_labels(causes_statement, causes_was_triggered)
+    label, mini_label = label_c + "\n+\n" + label, mini_label_c + "\n+\n" + mini_label
     return label, mini_label
 
-def new_after_edge(src_id, target_id, statement: AfterStatement, self_references = 0):
-    label, mini_label = new_after_edge_labels(statement)
+def new_after_edge(src_id, target_id, causes_statement: CausesStatement, after_statement: AfterStatement, causes_was_triggered, self_references = 0):
+    label, mini_label = new_after_edge_labels(causes_statement, after_statement, causes_was_triggered)
     return _new_after_edge(src_id, target_id, label, mini_label, self_references)
 
-def new_causes_edge_labels(statement:CausesStatement):
-    label = f"{', '.join(statement.fluents)}\nCAUSED BY\n{statement.action}"
-    if len(statement.if_fluents):
-        label += f"\nPROVIDED THAT\n{', '.join(statement.if_fluents)}"
-    if statement.cost != 0:
-        label += f"\nCOST: {statement.cost}"
-    mini_label = f"{statement.action} ({', '.join(statement.fluents)})"
-    return label, mini_label
-
-def new_causes_edge(src_id, target_id, statement:CausesStatement, self_references = 0):
-    label, mini_label = new_causes_edge_labels(statement)
+def new_causes_edge(src_id, target_id, statement:CausesStatement, causes_was_triggered, self_references = 0):
+    label, mini_label = new_causes_edge_labels(statement, causes_was_triggered)
     return _new_causes_edge(src_id, target_id, label, mini_label, self_references)
 
 def count_self_references(causes_edges:List[Edge], after_edges:List[Edge], src_id, dst_id):
@@ -155,3 +165,9 @@ def count_self_references(causes_edges:List[Edge], after_edges:List[Edge], src_i
         if edge.to == src_id and edge.source == src_id:
             self_refs += 1
     return self_refs
+
+def color_node(id, nodes: List[Node], color):
+    for node in nodes:
+        if node.id == id:
+            node.color = color
+            return

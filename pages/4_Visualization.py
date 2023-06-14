@@ -33,10 +33,10 @@ def construct_graph():
                     collapsible=True
     )
 
-    # statements: List[Statement] = st.session_state.statements
-    # fluents: List[str] = st.session_state.fluents
+    statements: List[Statement] = st.session_state.statements
+    fluents: List[str] = st.session_state.fluents
 
-    statements, fluents = mock_example()
+    # statements, fluents = mock_example()
 
     initially_statements: List[InitiallyStatement] = list(filter(lambda statement:statement.type == INITIALLY, statements))
     causes_statements: List[CausesStatement] = list(filter(lambda statement:statement.type == CAUSES, statements))
@@ -47,7 +47,6 @@ def construct_graph():
     nodes, state_node_list = add_all_states_as_nodes(states)
     causes_edges, after_edges = [], []
 
-    print("Graph in construction...")
     for state in states:
         current_state = State(state.fluents.copy(), state.cost)
 
@@ -86,9 +85,6 @@ def construct_graph():
                     else:
                         loop += 1
                     break
-
-    print("Finished!")
-                    
     edges = [*causes_edges, *after_edges]
     agraph(nodes, edges, config)
 
