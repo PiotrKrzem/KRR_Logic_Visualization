@@ -48,7 +48,7 @@ def input_statement():
             if f"**IF** " not in statement.markdown:
                 statement.markdown = "error"
         for fluent in st.session_state.causes_fluent_select:
-            if fluent.replace("~ ","") in statement.if_fluents or f"~ {fluent}" in statement.if_fluents or fluent in statement.if_fluents:
+            if fluent in statement.if_fluents:
                 statement.markdown = "error"
     elif statement_type == AFTER:
         statement = AfterStatement()
@@ -59,7 +59,8 @@ def input_statement():
             statement.markdown += f"{action}"
             statement.markdown += ", " if idx < len(st.session_state.after_action_select) - 1 else ""
         for addedStatement in st.session_state.statements:
-            if addedStatement.markdown.replace("~ ","") == statement.markdown.replace("~ ",""):
-                statement.markdown = "error"
+            for action in statement.actions:
+                if action in addedStatement.actions and statement.fluent == addedStatement.fluent:
+                    statement.markdown = "error"
     if statement.markdown != "error":
         st.session_state.statements.append(statement)
