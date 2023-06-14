@@ -1,4 +1,5 @@
 import streamlit as st
+import random
 from typing import List
 
 from src.logic.statements import *
@@ -56,3 +57,8 @@ def mock_example():
     ]
     fluents = ['hi', 'there', 'hello']
     return statements, fluents
+
+def increase_self_reference(inc = 0):
+    return {
+        'size': 30 + inc * 15
+    }

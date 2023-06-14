@@ -7,8 +7,72 @@ from src.config import *
 
 SEQUENTIAL_AFTER = True
 
-def after_statement_satisfied(statement: AfterStatement, performed_actions: List[str]):
-    if not SEQUENTIAL_AFTER:
+def state_label(state: State, add_cost = False):
+    label = ""
+    if state.fluents:
+        for fluent in state.fluents:
+            label += f"{fluent}\n"
+    if add_cost:
+        label += f"  Total cost: {state.cost}  "
+    return label
+
+def new_node(id: int, state: State, color = None):
+    label = state_label(state)
+    if color is None:
+        return Node(id=f"{id}", title=label, label=label, **node_config)
+    else:
+        return Node(id=f"{id}", title=label, label=label, color=color, **node_config)
+
+def add_node(nodes:List[Node], id:int, state:State, color = None):
+    nodes.append(new_node(id, state, color))
+
+def is_positive_fluent(fluent: str):
+    return not fluent.count('~ ')
+
+def is_negative_fluent(fluent: str):
+    return fluent.count('~ ')
+
+def positive_fluent(fluent: str):
+    if is_negative_fluent(fluent):
+        return fluent[2:]
+    return fluent
+
+def negative_fluent(fluent):
+    if is_positive_fluent(fluent):
+        return f"~ {fluent}"
+    return fluent
+
+def all_possible_states(only_positive_fluents):
+    all_states = [[]]
+    for fluent in only_positive_fluents:
+        new_all_states = []
+        for state in all_states:
+            new_positive_state = state.copy()
+            new_negative_state = state.copy()
+            new_positive_state.append(fluent)
+            new_negative_state.append(f"~ {fluent}")
+            new_all_states.append(new_positive_state)
+            new_all_states.append(new_negative_state)
+        all_states = new_all_states
+    return list(map(lambda list_of_fluents: State(list_of_fluents, 0), all_states))
+
+def add_all_states_as_nodes(states):
+    state_node_list = []
+    nodes = []
+    for i, state in enumerate(states):
+        node = new_node(i, state)
+        state_node_list.append((state, node))
+        nodes.append(node)
+    return nodes, state_node_list
+
+def get_state_node_id(current_state: State, state_node_list:List[Tuple[State, Node]]):
+    for state, node in state_node_list:
+        if current_state == state:
+            return node.id
+    raise Exception(f"State missing: {state}\n{list(map(lambda x:x[0], state_node_list))}")
+
+def after_statement_satisfied(statement: AfterStatement, performed_actions: List[str], sequential = True):
+    if not sequential:
         for action in statement.actions:
             if action not in performed_actions:
                 return False
@@ -20,66 +84,57 @@ def after_statement_satisfied(statement: AfterStatement, performed_actions: List
                 idx += 1
         return len(statement.actions) == idx
 
-def causes_statement_satisfied(statement: CausesStatement, state: List[Any]):
+def causes_statement_satisfied(statement: CausesStatement, state: State):
     for fluent in statement.if_fluents:
-        if fluent not in state:
+        if fluent not in state.fluents:
             return False
     return True  
 
-def update_state(state: List[Any], updates: List[str], cost: int):
-    for update in updates:
-        if update in state:
-            continue
-        elif (update.count('~ ') == 1 and update[2:] in state):
-            state[state.index(update[2:])] = update
-        elif (update.count('~ ') == 0 and f"~ {update}" in state):
-            state[state.index(f"~ {update}")] = update
+def update_state(state: State, fluent_updates: List[str], cost: int = 0):
+    for fluent_update in fluent_updates:
+        if fluent_update in state.fluents:
+            pass
+        elif negative_fluent(fluent_update) in state.fluents:
+            state.fluents[state.fluents.index(negative_fluent(fluent_update))] = fluent_update
+        elif positive_fluent(fluent_update) in state.fluents:
+            state.fluents[state.fluents.index(positive_fluent(fluent_update))] = fluent_update
         else:
-            state.append(update)
-    state[0] += cost
+            state.fluents.append(fluent_update)
+    state.cost += cost
+    return state
 
-def add_node(nodes:List[Node], id:int, state:List[Any], color=None):
-    text = ""
-    if len(state) >= 2:
-        for fluent in state[1:]:
-            text += f"{fluent}\n"
-    text += f"  Total cost: {state[0]}  "
-    if color is None:
-        nodes.append(Node(id=f"{id}", title=text, label=text, shape='circle', scaling={'label':True}))
+def edge_present(edges:List[Edge], src_id, dst_id):
+    for edge in edges:
+        if edge.source == src_id and edge.to == dst_id:
+            return True
+    return False
+
+def _new_after_edge(src_id, dst_id, label, mini_label):
+    if BIG_EDGE_LABELS:
+        e = Edge(source=f"{src_id}", target=f"{dst_id}", title=label, label=label, **after_edge_config)
     else:
-        nodes.append(Node(id=f"{id}", title=text, label=text, shape='circle', scaling={'label':True}, color=color))
-    return text
+        e = Edge(source=f"{src_id}", target=f"{dst_id}", title=label, label=mini_label, **after_edge_config)
+    e.mini_label = mini_label
+    return e
 
-def add_edge(edges:List[Edge], src_id, target_id, label):
-    edges.append(Edge(source=f"{src_id}", target=f"{target_id}", type="CURVE_SMOOTH", title=label, label=label, length=300, width=4))
+def _new_causes_edge(src_id, dst_id, label, mini_label):
+    if BIG_EDGE_LABELS:
+        e = Edge(source=f"{src_id}", target=f"{dst_id}", title=label, label=label, **causes_edge_config)
+    else:
+        e = Edge(source=f"{src_id}", target=f"{dst_id}", title=label, label=mini_label, **causes_edge_config)
+    e.mini_label = mini_label
+    return e
 
-def add_edge_after(edges:List[Edge], src_id, target_id, statement:AfterStatement):
+def new_after_edge(src_id, target_id, statement: AfterStatement):
     label = f"{statement.fluent}\nAFTER\n{', '.join(statement.actions)}"
-    add_edge(edges, src_id, target_id, label)
+    mini_label = f"{statement.fluent}"
+    return _new_after_edge(src_id, target_id, label, mini_label)
 
-def add_edge_causes(edges:List[Edge], src_id, target_id, statement:CausesStatement):
+def new_causes_edge(src_id, target_id, statement:CausesStatement):
     label = f"{', '.join(statement.fluents)}\nCAUSED BY\n{statement.action}"
     if len(statement.if_fluents):
         label += f"\nPROVIDED THAT\n{', '.join(statement.if_fluents)}"
     if statement.cost != 0:
         label += f"\nCOST: {statement.cost}"
-    add_edge(edges, src_id, target_id, label)
-
-def add_node_if_missing(current_state, current_state_id, state_map, nodes):
-    keys = list(map(lambda x:x[0], state_map))
-    src_id = current_state_id
-    add_new_node = current_state not in keys
-    if add_new_node:
-        new_id = len(state_map) + 1
-        state_map.append((current_state.copy(), new_id)) 
-        add_node(nodes, new_id, current_state)
-    else:
-        src_id = current_state_id
-        new_id = state_map[keys.index(current_state)][1]
-    return src_id, new_id, add_new_node
-
-def color_node_with_current_id(nodes: List[Node], current_state_id, current_state):
-    for node in nodes:
-        # Cheesy way to compute label coz Im tired
-        if add_node([], current_state_id, current_state) == node.title:
-            node.color = 'red'
+    mini_label = f"{statement.action} ({', '.join(statement.fluents)})"
+    return _new_causes_edge(src_id, target_id, label, mini_label)

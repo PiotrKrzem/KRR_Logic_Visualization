@@ -3,7 +3,7 @@ from streamlit_agraph import *
 from typing import List, Any
 
 from src.logic.statements import *
-from src.pages.visualization_v2_funcs import *
+from src.pages.visualization_funcs import *
 from src.utils import apply_style, add_title, mock_example
 
 # from statements import *
@@ -59,49 +59,38 @@ def construct_graph():
         while program_update_was_performed and loop < MAX_LOOPS:
             program_update_was_performed = False
 
-            for statement in state_after_statements:
-                if after_statement_satisfied(statement, performed_actions):
-                    src_id = get_state_node_id(current_state, state_node_list)
-                    current_state = update_state(current_state, [statement.fluent], 0)
-                    dst_id = get_state_node_id(current_state, state_node_list)
-                    if not edge_present(after_edges, src_id, dst_id):
-                        after_edges.append(new_after_edge(src_id, dst_id, statement))
-                        loop = 0
-                    else:
-                        loop += 1
-                    state_after_statements.remove(statement)
-                    program_update_was_performed = True
-                    break
-
             for statement in state_causes_statements:
                 if causes_statement_satisfied(statement, current_state):
                     src_id = get_state_node_id(current_state, state_node_list)
                     current_state = update_state(current_state, statement.fluents, 0)
                     dst_id = get_state_node_id(current_state, state_node_list)
 
+                    performed_actions.append(statement.action)
+                    program_update_was_performed = True
+
+                    for after_statement in state_after_statements:
+                        if after_statement_satisfied(after_statement, performed_actions):
+                            current_state = update_state(current_state, [after_statement.fluent], 0)
+                            dst_id = get_state_node_id(current_state, state_node_list)
+                            if not edge_present(after_edges, src_id, dst_id):
+                                after_edges.append(new_after_edge(src_id, dst_id, after_statement))
+                                loop = 0
+                            else:
+                                loop += 1
+                            state_after_statements.remove(after_statement)
+                            break
+
                     if not edge_present(causes_edges, src_id, dst_id):
                         causes_edges.append(new_causes_edge(src_id, dst_id, statement))
                         loop = 0
                     else:
                         loop += 1
-                    performed_actions.append(statement.action)
-                    program_update_was_performed = True
                     break
 
     print("Finished!")
                     
     edges = [*causes_edges, *after_edges]
     agraph(nodes, edges, config)
-
-    # current_state = [0]
-    # current_state.extend(list(map(lambda statement:statement.fluent, initially_statements)))
-    # current_state_id = 1
-    # add_node(nodes, current_state_id, current_state, 'yellow')
-    # # while ...
-    # color_node_with_current_id(nodes, current_state_id, current_state)
-
-    construct_summary_panel(current_state)
-    
 
 def construct():
     apply_style()

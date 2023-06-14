@@ -3,6 +3,7 @@ from streamlit_agraph import *
 from typing import List, Any, Tuple
 
 from src.logic.statements import *
+from src.utils import increase_self_reference
 from src.config import *
 
 SEQUENTIAL_AFTER = True
@@ -103,34 +104,54 @@ def update_state(state: State, fluent_updates: List[str], cost: int = 0):
     state.cost += cost
     return state
 
-def edge_present(edges:List[Edge], src_id, dst_id):
+def edge_present(edges:List[Edge], src_id, dst_id, mini_label):
     for edge in edges:
-        if edge.source == src_id and edge.to == dst_id:
+        if edge.source == src_id and edge.to == dst_id and edge.mini_label == mini_label:
             return True
     return False
 
-def _new_after_edge(src_id, dst_id, label, mini_label):
+def _new_after_edge(src_id, dst_id, label, mini_label, self_refs = 0):
     if BIG_EDGE_LABELS:
-        return Edge(source=f"{src_id}", target=f"{dst_id}", title=label, label=label, **after_edge_config)
+        e = Edge(source=f"{src_id}", target=f"{dst_id}", title=label, label=label, selfReference = increase_self_reference(self_refs), **after_edge_config)
     else:
-        return Edge(source=f"{src_id}", target=f"{dst_id}", title=label, label=mini_label, **after_edge_config)
+        e = Edge(source=f"{src_id}", target=f"{dst_id}", title=label, label=mini_label, selfReference = increase_self_reference(self_refs), **after_edge_config)
+    e.mini_label = mini_label
+    return e
 
-def _new_causes_edge(src_id, dst_id, label, mini_label):
+def _new_causes_edge(src_id, dst_id, label, mini_label, self_refs = 0):
     if BIG_EDGE_LABELS:
-        return Edge(source=f"{src_id}", target=f"{dst_id}", title=label, label=label, **causes_edge_config)
+        e = Edge(source=f"{src_id}", target=f"{dst_id}", title=label, label=label, selfReference = increase_self_reference(self_refs), **causes_edge_config)
     else:
-        return Edge(source=f"{src_id}", target=f"{dst_id}", title=label, label=mini_label, **causes_edge_config)
+        e = Edge(source=f"{src_id}", target=f"{dst_id}", title=label, label=mini_label, selfReference = increase_self_reference(self_refs), **causes_edge_config)
+    e.mini_label = mini_label
+    return e
 
-def new_after_edge(src_id, target_id, statement: AfterStatement):
+def new_after_edge_labels(statement: AfterStatement):
     label = f"{statement.fluent}\nAFTER\n{', '.join(statement.actions)}"
     mini_label = f"{statement.fluent}"
-    return _new_after_edge(src_id, target_id, label, mini_label)
+    return label, mini_label
 
-def new_causes_edge(src_id, target_id, statement:CausesStatement):
+def new_after_edge(src_id, target_id, statement: AfterStatement, self_references = 0):
+    label, mini_label = new_after_edge_labels(statement)
+    return _new_after_edge(src_id, target_id, label, mini_label, self_references)
+
+def new_causes_edge_labels(statement:CausesStatement):
     label = f"{', '.join(statement.fluents)}\nCAUSED BY\n{statement.action}"
     if len(statement.if_fluents):
         label += f"\nPROVIDED THAT\n{', '.join(statement.if_fluents)}"
     if statement.cost != 0:
         label += f"\nCOST: {statement.cost}"
     mini_label = f"{statement.action} ({', '.join(statement.fluents)})"
-    return _new_causes_edge(src_id, target_id, label, mini_label)
+    return label, mini_label
+
+def new_causes_edge(src_id, target_id, statement:CausesStatement, self_references = 0):
+    label, mini_label = new_causes_edge_labels(statement)
+    return _new_causes_edge(src_id, target_id, label, mini_label, self_references)
+
+def count_self_references(causes_edges:List[Edge], after_edges:List[Edge], src_id, dst_id):
+    if src_id != dst_id: return 0
+    self_refs = 0
+    for edge in [*causes_edges, *after_edges]:
+        if edge.to == src_id and edge.source == src_id:
+            self_refs += 1
+    return self_refs

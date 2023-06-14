@@ -3,7 +3,7 @@ from streamlit_agraph import *
 from typing import List, Any
 
 from src.logic.statements import *
-from src.pages.visualization_funcs import *
+from src.pages.cost_flow_funcs import *
 from src.utils import apply_style, add_title, mock_example
 
 # from statements import *
@@ -160,6 +160,8 @@ def construct_graph():
     with bottom_subol2:
         st.text_input("_", value = f"{', '.join(final_fluents)}", key="output_state", label_visibility='collapsed', disabled=True)
         st.text_input("_", value = f"{final_cost}",key = "overall_cost", label_visibility='collapsed', disabled=True)
+    if loop == MAX_LOOPS:
+        st.warning("Maximum recursion depth reached")
 
 def construct():
     apply_style()
