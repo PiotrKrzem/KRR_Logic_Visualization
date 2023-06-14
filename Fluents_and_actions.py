@@ -43,8 +43,7 @@ def construct_fluents_view():
         with fluent_col1:
             st.markdown(f"**{item}**")
         with fluent_col2:
-            if st.button(":x:", key = f"fluent_button_{idx}"):
-                st.session_state.fluents.pop(idx)
+            st.button(":x:", key = f"fluent_button_{idx}", on_click=delete_fluent(idx))
 
 def construct_actions_view():
     subcol1, subol2 = st.columns([1, 2])
@@ -60,8 +59,7 @@ def construct_actions_view():
         with action_col1:
             st.markdown(f"**{item}**")
         with action_col2:
-            if st.button(":x:", key = f"action_button_{idx}"):
-                st.session_state.fluents.pop(idx)
+            st.button(":x:", key = f"action_button_{idx}", on_click=delete_action(idx))
 
 def construct():
     main_config()
