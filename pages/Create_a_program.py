@@ -58,7 +58,6 @@ def construct_program_view_panel():
                 if idx < len(st.session_state.statements) - 1:
                     st.session_state.statements[idx], st.session_state.statements[idx + 1] = st.session_state.statements[idx + 1], st.session_state.statements[idx]
 
-
 def construct():
     apply_style()
     add_title()

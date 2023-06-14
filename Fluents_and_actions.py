@@ -6,7 +6,6 @@ from src.utils import apply_style, add_title
 
 def main_config():
     st.set_page_config(page_title='KRR Application', page_icon=':bar_chart:', layout='wide')
-    
 
 def initialize_session():
     if 'initialize' not in st.session_state:

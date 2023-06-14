@@ -1,17 +1,23 @@
 import streamlit as st
 from typing import List
 
+from src.logic.statements import *
+
+style = ''
+with open('style.css')as f:
+    print('Opened')
+    style = f.read()
+
+@st.cache_data
+def apply_style():
+    st.markdown(f"<style>{style}</style>", unsafe_allow_html = True)
+
 def positive_and_negative_fluents() -> List[str]:
     fluents = []
     for fluent in st.session_state.fluents:
         fluents.append(fluent)
         fluents.append(f"~ {fluent}") 
     return fluents
-
-@st.cache_data
-def apply_style():
-    with open('style.css')as f:
-        st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html = True)
 
 def add_title():
     
@@ -38,3 +44,15 @@ def add_title():
         """,
         unsafe_allow_html=True,
     )
+
+def mock_example():
+    statements = [
+        InitiallyStatement(fluent="hi"),
+        InitiallyStatement(fluent="there"),
+        InitiallyStatement(fluent="~ hello"),
+        CausesStatement(action="greet", fluents=["~ hi", "~ there", "hello"], if_fluents=[ "hi", "there", '~ hello'], cost=4),
+        CausesStatement(action="bang", fluents=["~ hello", "there"], if_fluents=['~ hi', "~ there"], cost=2),
+        AfterStatement(fluent='hello', actions=['greet', 'bang'])
+    ]
+    fluents = ['hi', 'there', 'hello']
+    return statements, fluents

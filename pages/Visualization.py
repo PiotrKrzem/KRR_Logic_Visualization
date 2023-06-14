@@ -4,7 +4,7 @@ from typing import List, Any
 
 from src.logic.statements import *
 from src.pages.visualization_funcs import *
-from src.utils import apply_style, add_title
+from src.utils import apply_style, add_title, mock_example
 
 # from statements import *
 
@@ -99,15 +99,8 @@ def construct_graph():
                     collapsible=True
     )
 
-    statements: List[Statement] = st.session_state.statements
-    # statements = [
-    #     InitiallyStatement(fluent="hi"),
-    #     InitiallyStatement(fluent="there"),
-    #     InitiallyStatement(fluent="~ hello"),
-    #     CausesStatement(action="greet", fluents=["~ hi", "~ there", "hello"], if_fluents=[ "hi", "there", '~ hello'], cost=4),
-    #     CausesStatement(action="bang", fluents=["~ hello", "there"], if_fluents=['~ hi', "~ there"], cost=2),
-    #     AfterStatement(fluent='hello', actions=['greet', 'bang'])
-    # ]
+    # statements: List[Statement] = st.session_state.statements
+    statements, _ = mock_example()
 
     initially_statements: List[InitiallyStatement] = list(filter(lambda statement:statement.type == INITIALLY, statements))
     causes_statements: List[CausesStatement] = list(filter(lambda statement:statement.type == CAUSES, statements))
