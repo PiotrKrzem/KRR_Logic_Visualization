@@ -10,6 +10,9 @@ def input_statement():
         statement = InitiallyStatement()
         statement.fluent = st.session_state.initially_fluent_select
         statement.markdown = f"**INITIALLY** {statement.fluent}"
+        for addedStatement in st.session_state.statements:
+            if addedStatement.fluent.replace("~ ","") == statement.fluent.replace("~ ",""):
+                statement.markdown = "error"
     elif statement_type == CAUSES:
         statement = CausesStatement()
         statement.action = st.session_state.causes_action_select
@@ -18,14 +21,35 @@ def input_statement():
             statement.fluents.append(fluent)
             statement.markdown += f"{fluent}"
             statement.markdown += ", " if idx < len(st.session_state.causes_fluent_select) - 1 else " "
-        if len(st.session_state.causes_if_fluents_select):
+            if "~" in fluent:
+                if fluent.replace("~ ","") in statement.fluents:
+                    statement.markdown = "error"
+            else:
+                if f"~ {fluent}" in statement.fluents:
+                    statement.markdown = "error"
+        if len(st.session_state.causes_if_fluents_select) and statement.markdown != "error":
             statement.markdown += f"**IF** "
             for idx, fluent in enumerate(st.session_state.causes_if_fluents_select):
                 statement.if_fluents.append(fluent)
                 statement.markdown += f"{fluent} "
                 statement.markdown += ", " if idx < len(st.session_state.causes_if_fluents_select) - 1 else " "
-        statement.cost = int(st.session_state.causes_cost)
-        statement.markdown += f"**COST** {statement.cost}"
+                if "~" in fluent:
+                    if fluent.replace("~ ","") in statement.if_fluents:
+                        statement.markdown = "error"
+                else:
+                    if f"~ {fluent}" in statement.if_fluents:
+                        statement.markdown = "error"
+        for addedStatement in st.session_state.statements:
+            if statement.markdown in addedStatement.markdown:
+                statement.markdown = "error"
+        if statement.markdown != "error":
+            statement.cost = int(st.session_state.causes_cost)
+            statement.markdown += f"**COST** {statement.cost}"
+            if f"**IF** " not in statement.markdown:
+                statement.markdown = "error"
+        for fluent in st.session_state.causes_fluent_select:
+            if fluent.replace("~ ","") in statement.if_fluents or f"~ {fluent}" in statement.if_fluents or fluent in statement.if_fluents:
+                statement.markdown = "error"
     elif statement_type == AFTER:
         statement = AfterStatement()
         statement.fluent = st.session_state.after_fluent_select
@@ -34,4 +58,8 @@ def input_statement():
             statement.actions.append(action)
             statement.markdown += f"{action}"
             statement.markdown += ", " if idx < len(st.session_state.after_action_select) - 1 else ""
-    st.session_state.statements.append(statement)
+        for addedStatement in st.session_state.statements:
+            if addedStatement.markdown.replace("~ ","") == statement.markdown.replace("~ ",""):
+                statement.markdown = "error"
+    if statement.markdown != "error":
+        st.session_state.statements.append(statement)

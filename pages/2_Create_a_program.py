@@ -20,13 +20,12 @@ def construct_add_statement_panel():
         causes_col1, causes_col2 = st.columns([1, 1])
         with causes_col1:
             causes_action_option = st.selectbox("_", st.session_state.actions, key="causes_action_select", label_visibility='collapsed')
-            causes_fluent_options = st.multiselect("_", positive_and_negative_fluents(), key="causes_fluent_select", label_visibility='collapsed')
-            causes_if_fluents_option = st.multiselect("_", positive_and_negative_fluents(), key="causes_if_fluents_select", label_visibility='collapsed')
-            causes_cost = st.number_input("_", 0, 9999, key="causes_cost", label_visibility='collapsed')
-        with causes_col2:
             st.caption("CAUSES")
+            causes_fluent_options = st.multiselect("_", positive_and_negative_fluents(), key="causes_fluent_select", label_visibility='collapsed')
             st.caption("IF")
+            causes_if_fluents_option = st.multiselect("_", positive_and_negative_fluents(), key="causes_if_fluents_select", label_visibility='collapsed')
             st.caption("COST")
+            causes_cost = st.number_input("_", 0, 9999, key="causes_cost", label_visibility='collapsed')
     elif option == AFTER:
         after_col1, after_col2 = st.columns([1, 1])
         with after_col1:
@@ -43,20 +42,23 @@ def construct_program_view_panel():
     with subol2:
         file = st.file_uploader("IMPORT", type = "txt", key = "program_upload")
     for idx, item in enumerate(st.session_state.statements):
-        statement_col1, statement_col2, statement_col3, statement_col4 = st.columns([20, 1, 1, 1])
+        statement_col1, statement_col2, statement_col3, statement_col4 = st.columns([20, 2, 2, 2])
         with statement_col1:
             st.markdown(item.markdown)
         with statement_col2:
             if st.button(":x:", key = f"statement_button_{idx}"):
                 st.session_state.statements.pop(idx)
+                st.experimental_rerun() 
         with statement_col3:
             if st.button(":arrow_up_small:", key = f"statement_up_button_{idx}"):
                 if idx != 0:
                     st.session_state.statements[idx], st.session_state.statements[idx - 1] = st.session_state.statements[idx - 1], st.session_state.statements[idx]
+                    st.experimental_rerun() 
         with statement_col4:
             if st.button(":arrow_down_small:", key = f"statement_down_button_{idx}"):
                 if idx < len(st.session_state.statements) - 1:
                     st.session_state.statements[idx], st.session_state.statements[idx + 1] = st.session_state.statements[idx + 1], st.session_state.statements[idx]
+                    st.experimental_rerun() 
 
 def construct():
     apply_style()

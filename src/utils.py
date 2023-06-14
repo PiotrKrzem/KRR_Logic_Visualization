@@ -34,7 +34,7 @@ def add_title():
                 content: "KRR Visualization";
                 margin-left: 20px;
                 margin-top: 40px;
-                font-size: 50px;
+                font-size: 40px;
                 font-weight: bold;
                 position: centered;
                 top: 100px;
