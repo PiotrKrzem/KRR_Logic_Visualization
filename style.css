@@ -6,3 +6,23 @@
 .plot-container>div {
     box-shadow: 0 0 3px #cccccc;
 }
+
+h1 {
+    font-size: 40px !important;
+}
+
+h2 {
+    font-size: 30px !important;
+}
+
+button {
+    font-size: 30px !important;
+}
+
+p {
+    font-size: 30px !important;
+}
+
+span {
+    font-size: 40px !important;
+}
