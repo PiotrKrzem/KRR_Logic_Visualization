@@ -9,6 +9,7 @@ from src.utils import apply_style, add_title
 
 def construct_add_statement_panel():
     st.subheader("ADD STATEMENT")
+    st.divider()
     option = st.selectbox("Select statement type", (INITIALLY, CAUSES, AFTER), key="statement_select")
     if option == INITIALLY:
         initially_col1, initially_col2 = st.columns([1, 1])
@@ -39,8 +40,9 @@ def construct_program_view_panel():
     subcol1, subol2 = st.columns([2, 1])
     with subcol1:
         st.subheader("PROGRAM")
-    with subol2:
-        file = st.file_uploader("IMPORT", type = "txt", key = "program_upload")
+    st.divider()
+    # with subol2:
+    #     file = st.file_uploader("IMPORT", type = "txt", key = "program_upload")
     for idx, item in enumerate(st.session_state.statements):
         statement_col1, statement_col2, statement_col3, statement_col4 = st.columns([20, 2, 2, 2])
         with statement_col1:

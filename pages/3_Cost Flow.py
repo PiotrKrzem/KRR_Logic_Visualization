@@ -4,7 +4,7 @@ from typing import List, Any
 
 from src.logic.statements import *
 from src.pages.cost_flow_funcs import *
-from src.utils import apply_style, add_title, mock_example
+from src.utils import apply_style, add_title, mock_example, positive_and_negative_fluents
 
 # from statements import *
 
@@ -91,7 +91,7 @@ def color_node_with_current_id(nodes: List[Node], current_state_id, current_stat
 def construct_graph():
     nodes = []
     edges = []
-    config = Config(height=900,
+    config = Config(height=700,
 		            width=1600, 
                     nodeHighlightBehavior=False,
                     highlightColor="#F7A7A6", 
@@ -169,9 +169,51 @@ def construct_graph():
     if loop == MAX_LOOPS:
         st.warning("Maximum recursion depth reached")
 
+def test_query():
+    if st.session_state.query_keyword_select == 'necessary':
+        all_fluents_found = True
+        for fluent in st.session_state.query_fluent_select:
+            if fluent not in st.session_state.output_state:
+                all_fluents_found = False
+                break
+
+        st.session_state.queries_outcomes.append(all_fluents_found)
+        text = f"**NECESSARY** {', '.join(st.session_state.query_fluent_select)} -> "
+        text += "**TRUE**" if all_fluents_found else "**FALSE**"
+        st.session_state.queries.append(text)
+    else:
+        cost_sufficient = int(st.session_state.query_cost_select) >= int(st.session_state.overall_cost)
+        st.session_state.queries_outcomes.append(cost_sufficient)
+        text = f"**SUFFICIENT** {st.session_state.query_cost_select} -> "
+        text += "**TRUE**" if cost_sufficient else "**FALSE**"
+        st.session_state.queries.append(text)
+
+def construct_query():
+    col1, col2, col3, col4, col5 = st.columns(5)
+    with col1:
+        st.caption("QUERY")
+    with col2:
+        query_keyword_select = st.selectbox("_", ['necessary', 'sufficient'], key="query_keyword_select", label_visibility='collapsed')
+    with col3:
+        if query_keyword_select == 'necessary':
+            query_fluent_select = st.multiselect("_", positive_and_negative_fluents(), key="query_fluent_select", label_visibility='collapsed')
+        else:
+            query_cost_select = st.number_input("_", 0, 999, 0, key="query_cost_select", label_visibility='collapsed')
+    with col4:
+        st.caption("in P")
+    with col5:
+        st.button("EXECUTE QUERY", key="query_execute_button", on_click=test_query)
+
+    st.caption("QUERY RESULTS")
+    for query_markdown, query_value in zip(st.session_state.queries, st.session_state.queries_outcomes):
+        color = 'green' if query_value else 'red'
+        st.markdown(f":{color}[{query_markdown}]")
+
 def construct():
     apply_style()
     add_title()
     construct_graph()
+    st.divider()
+    construct_query()
 
 construct()

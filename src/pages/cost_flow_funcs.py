@@ -83,3 +83,6 @@ def color_node_with_current_id(nodes: List[Node], current_state_id, current_stat
         # Cheesy way to compute label coz Im tired
         if add_node([], current_state_id, current_state) == node.title:
             node.color = 'red'
+
+# def test_query():
+#     pass

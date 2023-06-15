@@ -2,4 +2,8 @@
 
 To launch:
 
-    streamlit run main.py
+    streamlit run Fluents_and_actions.py
+
+or, if you don't have a PATH with Pythonxx/Lib:
+
+    python -m streamlit run Fluents_and_actions.py

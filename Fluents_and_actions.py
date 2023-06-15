@@ -14,29 +14,38 @@ def initialize_session():
         st.session_state.fluents = []
         st.session_state.actions = []
         st.session_state.statements = []
+        st.session_state.queries = []
+        st.session_state.queries_outcomes = []
 
         st.session_state.fluent_input = ""
         st.session_state.action_input = ""
 
 def construct_add_fluent_add_action_panel():
     st.subheader("ADD FLUENT")
-    st.text_input("Enter fluent name", key="fluent_input")
+    st.divider()
+    value = st.text_input("Enter fluent name", key="fluent_input")
+    if value:
+        input_fluent(False)
+        
     st.button("ADD FLUENT", on_click=input_fluent)
 
     st.divider()
 
     st.subheader("ADD ACTION")
-    st.text_input("Enter action name", key="action_input")
+    value = st.text_input("Enter action name", key="action_input")
+    if value:
+        input_action(False)
     st.button("ADD ACTION", on_click=input_action)
 
 def construct_fluents_view():
     subcol1, subol2 = st.columns([1, 2])
     with subcol1:
         st.subheader("FLUENTS")
-    with subol2:
-        file = st.file_uploader("IMPORT", type = "txt", key = "fluent_upload")
-        if file is not None:
-            pass
+    st.divider()
+    # with subol2:
+    #     file = st.file_uploader("IMPORT", type = "txt", key = "fluent_upload")
+    #     if file is not None:
+    #         pass
     for idx, item in enumerate(st.session_state.fluents):
         fluent_col1, fluent_col2 = st.columns([5, 1])
         
@@ -51,10 +60,12 @@ def construct_actions_view():
     subcol1, subol2 = st.columns([1, 2])
     with subcol1:
         st.subheader("ACTIONS")
-    with subol2:
-        file = st.file_uploader("IMPORT", type = "txt", key = "action_upload")
-        if file is not None:
-            pass
+    st.divider()
+
+    # with subol2:
+    #     file = st.file_uploader("IMPORT", type = "txt", key = "action_upload")
+    #     if file is not None:
+    #         pass
     for idx, item in enumerate(st.session_state.actions):
         action_col1, action_col2 = st.columns([5, 1])
         
