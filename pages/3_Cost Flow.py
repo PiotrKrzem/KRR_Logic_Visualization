@@ -105,8 +105,11 @@ def construct_graph():
 def test_query():
     if st.session_state.query_keyword_select == 'necessary':
         all_fluents_found = True
+        print(st.session_state.query_fluent_select)
+        print(st.session_state.output_state)
+
         for fluent in st.session_state.query_fluent_select:
-            if fluent not in st.session_state.output_state:
+            if fluent not in st.session_state.output_state.split(", "):
                 all_fluents_found = False
                 break
 
@@ -135,8 +138,8 @@ def construct_query():
     query_statements = st.multiselect("IN PROGRAM", list(map(lambda x: x.action, filter(lambda x:isinstance(x, CausesStatement), st.session_state.statements))), key="query_statements")#, label_visibility='collapsed')
 
     st.button("EXECUTE QUERY", key="query_execute_button", on_click=test_query)
-    st.caption("QUERY RESULTS")
-    for query_markdown, query_value in zip(st.session_state.queries, st.session_state.queries_outcomes):
+    st.caption("QUERY RESULTS HISTORY")
+    for query_markdown, query_value in zip(reversed(st.session_state.queries), reversed(st.session_state.queries_outcomes)):
         color = 'green' if query_value else 'red'
         st.markdown(f":{color}[{query_markdown}]")
 
