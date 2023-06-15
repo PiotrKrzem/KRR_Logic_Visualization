@@ -45,8 +45,6 @@ def input_statement():
         if statement.markdown != "error":
             statement.cost = int(st.session_state.causes_cost)
             statement.markdown += f"**COST** {statement.cost}"
-            if f"**IF** " not in statement.markdown:
-                statement.markdown = "error"
         for fluent in st.session_state.causes_fluent_select:
             if fluent in statement.if_fluents:
                 statement.markdown = "error"
