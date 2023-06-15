@@ -95,6 +95,7 @@ def construct_graph():
 		            width=1600, 
                     nodeHighlightBehavior=False,
                     highlightColor="#F7A7A6", 
+                    physics=False,
                     directed=True, 
                     collapsible=True
     )
@@ -200,7 +201,7 @@ def construct_query():
         else:
             query_cost_select = st.number_input("_", 0, 999, 0, key="query_cost_select", label_visibility='collapsed')
     with col4:
-        st.caption("in P")
+        st.multiselect("in", list(map(lambda x: x.action, filter(lambda x:isinstance(x, CausesStatement), st.session_state.statements))), key="query_actions_select")
     with col5:
         st.button("EXECUTE QUERY", key="query_execute_button", on_click=test_query)
 

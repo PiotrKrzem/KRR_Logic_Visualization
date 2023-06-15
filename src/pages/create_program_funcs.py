@@ -21,7 +21,7 @@ def input_statement():
             statement.fluents.append(fluent)
             statement.markdown += f"{fluent}"
             statement.markdown += ", " if idx < len(st.session_state.causes_fluent_select) - 1 else " "
-            if "~" in fluent:
+            if "~ " in fluent:
                 if fluent.replace("~ ","") in statement.fluents:
                     statement.markdown = "error"
             else:
@@ -33,20 +33,18 @@ def input_statement():
                 statement.if_fluents.append(fluent)
                 statement.markdown += f"{fluent} "
                 statement.markdown += ", " if idx < len(st.session_state.causes_if_fluents_select) - 1 else " "
-                if "~" in fluent:
+                if "~ " in fluent:
                     if fluent.replace("~ ","") in statement.if_fluents:
                         statement.markdown = "error"
                 else:
                     if f"~ {fluent}" in statement.if_fluents:
                         statement.markdown = "error"
         for addedStatement in filter(lambda x:isinstance(x, CausesStatement), st.session_state.statements):
-            if statement.markdown in addedStatement.markdown:
+            if statement.markdown == addedStatement.markdown:
                 statement.markdown = "error"
         if statement.markdown != "error":
             statement.cost = int(st.session_state.causes_cost)
             statement.markdown += f"**COST** {statement.cost}"
-            if f"**IF** " not in statement.markdown:
-                statement.markdown = "error"
         for fluent in st.session_state.causes_fluent_select:
             if fluent in statement.if_fluents:
                 statement.markdown = "error"
