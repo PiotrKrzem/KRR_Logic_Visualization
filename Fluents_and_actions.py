@@ -14,6 +14,7 @@ def initialize_session():
         st.session_state.fluents = []
         st.session_state.actions = []
         st.session_state.statements = []
+        st.session_state.query_statements = []
         st.session_state.queries = []
         st.session_state.queries_outcomes = []
 

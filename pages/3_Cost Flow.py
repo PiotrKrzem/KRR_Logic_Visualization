@@ -11,83 +11,6 @@ from src.utils import apply_style, add_title, mock_example, positive_and_negativ
 SEQUENTIAL_AFTER = True
 MAX_LOOPS = 20
 
-def after_statement_satisfied(statement: AfterStatement, performed_actions: List[str]):
-    if not SEQUENTIAL_AFTER:
-        for action in statement.actions:
-            if action not in performed_actions:
-                return False
-        return True
-    else:
-        idx = 0
-        for action in performed_actions:
-            if len(statement.actions) and statement.actions[idx] == action:
-                idx += 1
-        return len(statement.actions) == idx
-
-def causes_statement_satisfied(statement: CausesStatement, state: List[Any]):
-    for fluent in statement.if_fluents:
-        if fluent not in state:
-            return False
-    return True  
-
-def update_state(state: List[Any], updates: List[str], cost: int):
-    for update in updates:
-        if update in state:
-            continue
-        elif (update.count('~ ') == 1 and update[2:] in state):
-            state[state.index(update[2:])] = update
-        elif (update.count('~ ') == 0 and f"~ {update}" in state):
-            state[state.index(f"~ {update}")] = update
-        else:
-            state.append(update)
-    state[0] += cost
-
-def add_node(nodes:List[Node], id:int, state:List[Any], color=None):
-    text = ""
-    if len(state) >= 2:
-        for fluent in state[1:]:
-            text += f"{fluent}\n"
-    text += f"  Total cost: {state[0]}  "
-    if color is None:
-        nodes.append(Node(id=f"{id}", title=text, label=text, shape='circle', scaling={'label':True}))
-    else:
-        nodes.append(Node(id=f"{id}", title=text, label=text, shape='circle', scaling={'label':True}, color=color))
-    return text
-
-def add_edge(edges:List[Edge], src_id, target_id, label):
-    edges.append(Edge(source=f"{src_id}", target=f"{target_id}", type="CURVE_SMOOTH", title=label, label=label, length=300, width=4))
-
-def add_edge_after(edges:List[Edge], src_id, target_id, statement:AfterStatement):
-    label = f"{statement.fluent}\nAFTER\n{', '.join(statement.actions)}"
-    add_edge(edges, src_id, target_id, label)
-
-def add_edge_causes(edges:List[Edge], src_id, target_id, statement:CausesStatement):
-    label = f"{', '.join(statement.fluents)}\nCAUSED BY\n{statement.action}"
-    if len(statement.if_fluents):
-        label += f"\nPROVIDED THAT\n{', '.join(statement.if_fluents)}"
-    if statement.cost != 0:
-        label += f"\nCOST: {statement.cost}"
-    add_edge(edges, src_id, target_id, label)
-
-def add_node_if_missing(current_state, current_state_id, state_map, nodes):
-    keys = list(map(lambda x:x[0], state_map))
-    src_id = current_state_id
-    add_new_node = current_state not in keys
-    if add_new_node:
-        new_id = len(state_map) + 1
-        state_map.append((current_state.copy(), new_id)) 
-        add_node(nodes, new_id, current_state)
-    else:
-        src_id = current_state_id
-        new_id = state_map[keys.index(current_state)][1]
-    return src_id, new_id, add_new_node
-
-def color_node_with_current_id(nodes: List[Node], current_state_id, current_state):
-    for node in nodes:
-        # Cheesy way to compute label coz Im tired
-        if add_node([], current_state_id, current_state) == node.title:
-            node.color = 'red'
-
 def construct_graph():
     nodes = []
     edges = []
@@ -101,11 +24,20 @@ def construct_graph():
     )
 
     statements: List[Statement] = st.session_state.statements
+    query_statements: List[str] = st.session_state.query_statements
     # statements, _ = mock_example()
 
     initially_statements: List[InitiallyStatement] = list(filter(lambda statement:statement.type == INITIALLY, statements))
-    causes_statements: List[CausesStatement] = list(filter(lambda statement:statement.type == CAUSES, statements))
     after_statements: List[AfterStatement] = list(filter(lambda statement:statement.type == AFTER, statements))
+
+    causes_definitions: List[CausesStatement] = list(filter(lambda statement:statement.type == CAUSES, statements))
+    causes_statements: List[CausesStatement] = []
+    for action in query_statements:
+        action_statement = list(filter(lambda statement:statement.action == action, causes_definitions))
+        if len(action_statement):
+            causes_statements.append(action_statement[0])
+        else:
+            st.warning(f"No CAUSES statement assigned to action {action}")
 
     current_state = [0]
     current_state.extend(list(map(lambda statement:statement.fluent, initially_statements)))
@@ -190,7 +122,7 @@ def test_query():
         st.session_state.queries.append(text)
 
 def construct_query():
-    col1, col2, col3, col4, col5 = st.columns(5)
+    col1, col2, col3 = st.columns(3)
     with col1:
         st.caption("QUERY")
     with col2:
@@ -200,11 +132,9 @@ def construct_query():
             query_fluent_select = st.multiselect("_", positive_and_negative_fluents(), key="query_fluent_select", label_visibility='collapsed')
         else:
             query_cost_select = st.number_input("_", 0, 999, 0, key="query_cost_select", label_visibility='collapsed')
-    with col4:
-        st.multiselect("in", list(map(lambda x: x.action, filter(lambda x:isinstance(x, CausesStatement), st.session_state.statements))), key="query_actions_select")
-    with col5:
-        st.button("EXECUTE QUERY", key="query_execute_button", on_click=test_query)
+    query_statements = st.multiselect("IN PROGRAM", list(map(lambda x: x.action, filter(lambda x:isinstance(x, CausesStatement), st.session_state.statements))), key="query_statements")#, label_visibility='collapsed')
 
+    st.button("EXECUTE QUERY", key="query_execute_button", on_click=test_query)
     st.caption("QUERY RESULTS")
     for query_markdown, query_value in zip(st.session_state.queries, st.session_state.queries_outcomes):
         color = 'green' if query_value else 'red'
