@@ -10,7 +10,7 @@ def input_statement():
         statement = InitiallyStatement()
         statement.fluent = st.session_state.initially_fluent_select
         statement.markdown = f"**INITIALLY** {statement.fluent}"
-        for addedStatement in st.session_state.statements:
+        for addedStatement in filter(lambda x:isinstance(x, InitiallyStatement), st.session_state.statements):
             if addedStatement.fluent.replace("~ ","") == statement.fluent.replace("~ ",""):
                 statement.markdown = "error"
     elif statement_type == CAUSES:
@@ -39,7 +39,7 @@ def input_statement():
                 else:
                     if f"~ {fluent}" in statement.if_fluents:
                         statement.markdown = "error"
-        for addedStatement in st.session_state.statements:
+        for addedStatement in filter(lambda x:isinstance(x, CausesStatement), st.session_state.statements):
             if statement.markdown in addedStatement.markdown:
                 statement.markdown = "error"
         if statement.markdown != "error":
@@ -58,7 +58,7 @@ def input_statement():
             statement.actions.append(action)
             statement.markdown += f"{action}"
             statement.markdown += ", " if idx < len(st.session_state.after_action_select) - 1 else ""
-        for addedStatement in st.session_state.statements:
+        for addedStatement in filter(lambda x:isinstance(x, AfterStatement), st.session_state.statements):
             for action in statement.actions:
                 if action in addedStatement.actions and statement.fluent == addedStatement.fluent:
                     statement.markdown = "error"
